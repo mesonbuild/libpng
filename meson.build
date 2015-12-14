@@ -1,4 +1,4 @@
-project('libpng', 'c')
+project('libpng', 'c', version : '1.6.17', license : 'libpng')
 
 zdep = dependency('zlib', required : false)
 
@@ -30,18 +30,11 @@ src = [
 ]
 
 
-if get_option('shared_lib')
-  libtype = 'shared_library'
-else
-  libtype = 'static_library'
-endif
-
-libpng = build_target('png',
+libpng = library('png',
   src,
   link_with : zlib,
   include_directories : zinc,
   dependencies : zdep,
-  target_type : libtype,
 )
 
 incdir = include_directories('.')
