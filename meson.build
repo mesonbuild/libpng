@@ -1,15 +1,6 @@
 project('libpng', 'c', version : '1.6.17', license : 'libpng')
 
-zdep = dependency('zlib', required : false)
-
-if zdep.found()
-  zinc = []
-  zlib = []
-else
-  zproj = subproject('zlib')
-  zinc = [zproj.get_variable('incdir')]
-  zlib = [zproj.get_variable('zlib')]
-endif
+zdep = dependency('zlib', fallback : ['zlib', 'zlib_dep'])
 
 src = [
   'png.c',
@@ -32,8 +23,6 @@ src = [
 
 libpng = library('png',
   src,
-  link_with : zlib,
-  include_directories : zinc,
   dependencies : zdep,
 )
 
@@ -44,3 +33,6 @@ pngtest = executable('pngtest', 'pngtest.c',
 
 test('pngtest', pngtest,
   args : '@0@/pngtest.png'.format(meson.current_source_dir()))
+
+png_dep = declare_dependency(link_with : libpng,
+  include_directories : incdir)
