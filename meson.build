@@ -2,6 +2,9 @@ project('libpng', 'c', version : '1.6.17', license : 'libpng')
 
 zdep = dependency('zlib', fallback : ['zlib', 'zlib_dep'])
 
+cc = meson.get_compiler('c')
+m_dep = cc.find_library('m', required : false)
+
 src = [
   'png.c',
   'pngerror.c',
@@ -23,7 +26,7 @@ src = [
 
 libpng = library('png',
   src,
-  dependencies : zdep,
+  dependencies : [zdep, m_dep],
 )
 
 incdir = include_directories('.')
