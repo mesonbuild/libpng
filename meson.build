@@ -1,8 +1,13 @@
 project('libpng', 'c', version : '1.6.17', license : 'libpng')
 
-zdep = dependency('zlib', fallback : ['zlib', 'zlib_dep'])
-
 cc = meson.get_compiler('c')
+
+if cc.get_define('__ANDROID__') != ''
+zdep = declare_dependency(link_args: '-lz')
+else
+zdep = dependency('zlib', fallback : ['zlib', 'zlib_dep'])
+endif
+
 m_dep = cc.find_library('m', required : false)
 
 src = [
