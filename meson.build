@@ -28,9 +28,19 @@ src = [
   'pngwutil.c',
 ]
 
+defines = []
+if build_machine.cpu_family() == 'arm64' or cc.get_define('__ARM_NEON') != ''
+src += [
+  'arm/arm_init.c',
+  'arm/filter_neon_intrinsics.c',
+  'arm/filter_neon.S',
+]
+defines += [ '-DPNG_ARM_NEON_OPT=2' ]
+endif
 
 libpng = library('png',
   src,
+  c_args: defines,
   dependencies : [zdep, m_dep],
 )
 
