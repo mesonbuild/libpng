@@ -1,4 +1,11 @@
-project('libpng', 'c', license : 'libpng')
+project('libpng', 'c', version : '1.6.35', license : 'libpng')
+
+png_versions = meson.project_version().split('.')
+png_major_version = png_versions[0]
+png_minor_version = png_versions[1]
+png_micro_version = png_versions[2]
+png_libname = 'png@0@@1@'.format(png_major_version, png_minor_version)
+png_libversion = '@0@@1@.@2@.0'.format(png_major_version, png_minor_version, png_micro_version)
 
 cc = meson.get_compiler('c')
 
@@ -10,36 +17,10 @@ else
   zlib_dep = dependency('zlib', fallback : ['zlib', 'zlib_dep'])
 endif
 
-src = [
-  'png.c',
-  'pngerror.c',
-  'pngget.c',
-  'pngmem.c',
-  'pngpread.c',
-  'pngread.c',
-  'pngrio.c',
-  'pngrtran.c',
-  'pngrutil.c',
-  'pngset.c',
-  'pngtrans.c',
-  'pngwio.c',
-  'pngwrite.c',
-  'pngwtran.c',
-  'pngwutil.c',
-]
 c_args = []
 
 if host_machine.system() == 'windows'
   c_args += ['-DPNG_BUILD_DLL']
-endif
-
-if host_machine.cpu_family() == 'arm64' or cc.get_define('__ARM_NEON') != ''
-  src += [
-    'arm/arm_init.c',
-    'arm/filter_neon_intrinsics.c',
-    'arm/filter_neon.S',
-  ]
-  c_args += ['-DPNG_ARM_NEON_OPT=2']
 endif
 
 libpng_deps = [
@@ -47,16 +28,68 @@ libpng_deps = [
         cc.find_library('m', required : false),
 ]
 
-libpng = library('png',
-    src,
+libpng = library(png_libname, [
+        'png.c',
+        'pngerror.c',
+        'pngget.c',
+        'pngmem.c',
+        'pngpread.c',
+        'pngread.c',
+        'pngrio.c',
+        'pngrtran.c',
+        'pngrutil.c',
+        'pngset.c',
+        'pngtrans.c',
+        'pngwio.c',
+        'pngwrite.c',
+        'pngwtran.c',
+        'pngwutil.c',
+    ],
+    version : png_libversion,
     dependencies : libpng_deps,
     c_args: c_args,
+    install: true,
 )
 
+pngincsubdir = 'lib' + png_libname
+pngincludedir = join_paths(get_option('includedir'), pngincsubdir)
+
 configure_file(
-    configuration : configuration_data(),
     input : 'scripts/pnglibconf.h.prebuilt',
     output : 'pnglibconf.h',
+    copy: true,
+    install_dir : pngincludedir,
+    install: true
+)
+
+install_headers('png.h', 'pngconf.h', subdir : pngincsubdir)
+
+cdata = configuration_data()
+cdata.set('prefix', get_option('prefix'))
+cdata.set('exec_prefix', get_option('prefix'))
+cdata.set('libdir', '${prefix}/' + get_option('libdir'))
+cdata.set('includedir', '${prefix}/' + get_option('includedir'))
+cdata.set('PNGLIB_MAJOR', png_major_version)
+cdata.set('PNGLIB_MINOR', png_minor_version)
+cdata.set('PNGLIB_VERSION', meson.project_version())
+# FIXME: should auto-generate pkg-config file to get this right
+cdata.set('LIBS', '-lz')
+
+configure_file(
+    input : 'libpng.pc.in',
+    output : 'libpng16.pc',
+    configuration : cdata,
+    install_dir : join_paths(get_option('libdir'), 'pkgconfig'),
+    install : true,
+)
+
+# FIXME: this should be a symlink to libpng16.pc
+configure_file(
+    input : 'libpng.pc.in',
+    output : 'libpng.pc',
+    configuration : cdata,
+    install_dir : join_paths(get_option('libdir'), 'pkgconfig'),
+    install : true,
 )
 
 png_dep = declare_dependency(
