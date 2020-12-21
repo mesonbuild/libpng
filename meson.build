@@ -17,34 +17,46 @@ else
   zlib_dep = dependency('zlib', fallback : ['zlib', 'zlib_dep'])
 endif
 
+src = [
+  'png.c',
+  'pngerror.c',
+  'pngget.c',
+  'pngmem.c',
+  'pngpread.c',
+  'pngread.c',
+  'pngrio.c',
+  'pngrtran.c',
+  'pngrutil.c',
+  'pngset.c',
+  'pngtrans.c',
+  'pngwio.c',
+  'pngwrite.c',
+  'pngwtran.c',
+  'pngwutil.c',
+]
+
 c_args = []
 
 if host_machine.system() == 'windows'
   c_args += ['-DPNG_BUILD_DLL']
 endif
 
+if host_machine.cpu_family() == 'arm64' or cc.get_define('__ARM_NEON') != ''
+  src += [
+    'arm/arm_init.c',
+    'arm/filter_neon_intrinsics.c',
+    'arm/filter_neon.S',
+  ]
+  c_args += ['-DPNG_ARM_NEON_OPT=2']
+endif
+
+
 libpng_deps = [
         zlib_dep,
         cc.find_library('m', required : false),
 ]
 
-libpng = library(png_libname, [
-        'png.c',
-        'pngerror.c',
-        'pngget.c',
-        'pngmem.c',
-        'pngpread.c',
-        'pngread.c',
-        'pngrio.c',
-        'pngrtran.c',
-        'pngrutil.c',
-        'pngset.c',
-        'pngtrans.c',
-        'pngwio.c',
-        'pngwrite.c',
-        'pngwtran.c',
-        'pngwutil.c',
-    ],
+libpng = library(png_libname, src,
     version : png_libversion,
     dependencies : libpng_deps,
     c_args: c_args,
